@@ -1,0 +1,17 @@
+{
+    "name": "@stats-compare/db",
+    "dependencies": {
+        "drizzle-kit": "^0.20.14",
+        "drizzle-orm": "^0.30.4",
+        "mysql2": "^3.9.2"
+    },
+    "main": "schema.ts",
+    "typings": "schema.ts",
+    "exports": {
+        ".": {
+            "require": "./schema.ts",
+            "import": "./schema.ts",
+            "bun": "./schema.ts"
+        }
+    }
+}
