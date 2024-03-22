@@ -4,7 +4,10 @@ import ClientHigherOrLowerPage from './page.client'
 import { fetchOptions } from './actions'
 
 export const metadata = {
-    title: "Higher or Lower"
+    title: "Higher or Lower",
+    robots: {
+        index: false
+    }
 }
 
 export default async function HigherOrLowerPage({ searchParams }: { searchParams: { type?: string, group?: string } }) {
