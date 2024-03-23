@@ -68,7 +68,7 @@ const videos = await db.query.YouTubeVideo.findMany({
         videoId: true,
     },
     orderBy: asc(schema.YouTubeVideo.updatedAt),
-    limit: 25_000,
+    limit: 10_000,
 })
 
 const videosList = videos.map(video => video.videoId)
