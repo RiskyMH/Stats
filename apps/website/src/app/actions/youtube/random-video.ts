@@ -1,26 +1,31 @@
 'use server'
 import { eq, inArray } from "drizzle-orm"
-import db from "@/utils/drizzle";
+import db, { client } from "@/utils/drizzle";
 import schema from "@stats-compare/db";
 import { unstable_cache } from "next/cache";
 
 const getVideoIds = unstable_cache(async (group?: string) => {
-    const channels = group
-        ? (await db
-            .select({ channelId: schema.YouTubeChannel.channelId })
-            .from(schema.YouTubeChannel)
+    if (group) {
+        const results = await db
+            .select({ videoId: schema.YouTubeVideo.videoId })
+            .from(schema.YouTubeVideo)
+            .innerJoin(
+                schema.YouTubeChannel,
+                eq(schema.YouTubeVideo.channelId, schema.YouTubeChannel.channelId)
+            )
             .where(eq(schema.YouTubeChannel.group, group))
-            .execute()
-        ).map(e => e.channelId)
-        : null;
+            .execute();
 
-    const results = await db.query.YouTubeVideo.findMany({
-        columns: {
-            videoId: true
-        },
-        where: channels ? inArray(schema.YouTubeVideo.channelId, channels) : eq(schema.YouTubeVideo.popular, true)
-    })
-    return results.map(e => e.videoId)
+        return results.map(e => e.videoId);
+    } else {
+        const results = await db
+            .select({ videoId: schema.YouTubeVideo.videoId })
+            .from(schema.YouTubeVideo)
+            .where(eq(schema.YouTubeVideo.popular, true))
+            .execute();
+
+        return results.map(e => e.videoId);
+    }
 }, undefined, { tags: ['youtube:videos'], revalidate: 60 * 60 * 24 })
 
 export async function getRandomVideos(size = 10, group?: string) {

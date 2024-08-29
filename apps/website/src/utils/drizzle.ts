@@ -7,8 +7,8 @@ if (!process.env.DATABASE_URL || !process.env.DATABASE_TOKEN) {
 }
 
 // create the connection
-const client = createClient({ url: process.env.DATABASE_URL, authToken: process.env.DATABASE_TOKEN });
+export const client = createClient({ url: process.env.DATABASE_URL, authToken: process.env.DATABASE_TOKEN });
 
-const db = drizzle(client, { schema });
+export const db = drizzle(client, { schema });
 
 export default db
