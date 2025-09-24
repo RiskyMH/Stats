@@ -11,7 +11,7 @@ export async function getCountryPopulation() {
     const html = await fetch(populationUrl).then((res) => res.text())
     const $ = load(html)
 
-    const table = $(".wikitable")
+    const table = $(".wikitable").first()
     const rows = table.find("tr")
 
     const countries = [] as { name: string; population: number, date: Date, image?: string }[]
@@ -19,20 +19,21 @@ export async function getCountryPopulation() {
     for (const row of rows) {
         const cells = $(row).find('td')
 
-        // because if its a 1/2 it means the one above only has it
-        const prev = $(row).prev().find('td')
-        const baseIndex = prev.eq(0).text().trim().includes("1/2") ? -1 : 0
+        if (cells.length === 0) continue
+
+        const nameCell = cells.eq(0)
+        const countryName = nameCell.find('a').first().text().trim()
+        const populationText = cells.eq(1).text().replace(/,/g, "").trim()
+        const populationValue = parseInt(populationText)
+        const dateText = cells.eq(3).text().trim()
 
         const country = {
-            _: cells.eq(baseIndex + 0).text().trim(),
-            name: cells.eq(baseIndex + 1).text().trim().replace("[disputed  – discuss] ", ''),
-            population: parseInt(cells.eq(baseIndex + 2).text().replace(/,/g, "")),
-            populationn: (cells.eq(baseIndex + 2).text()),
-            "%world": cells.eq(baseIndex + 3).text(),
-            date: new Date(cells.eq(baseIndex + 4).text().trim()),
-            source: cells.eq(baseIndex + 5).text(),
-            image: cells.eq(baseIndex + 1).find('img').attr('src')
+            name: countryName,
+            population: Number.isFinite(populationValue) ? populationValue : 0,
+            date: new Date(dateText),
+            image: nameCell.find('img').attr('src')
         }
+
         if (country.image?.endsWith(".svg.png")) {
             // un-optimize to get the svg
             country.image = country.image
@@ -41,8 +42,8 @@ export async function getCountryPopulation() {
                 .replace("//", "https://")
         }
 
-        if (country.name && country.population) {
-            countries.push({ ...country })
+        if (country.name && country.population > 0) {
+            countries.push(country)
         }
     }
 
@@ -53,27 +54,57 @@ export async function getCountryArea() {
     const html = await fetch(sizeUrl).then((res) => res.text())
     const $ = load(html)
 
-    const table = $(".wikitable")
+    const table = $(".wikitable").first()
     const rows = table.find("tr")
 
     const countries = [] as { name: string; area: number, image?: string }[]
-    // because if its a 1/3 it means the one above only has it
 
     for (const row of rows) {
         const cells = $(row).find('td')
 
-        const prev = $(row).prev().find('td')
-        const baseIndex = prev.eq(0).text().trim().includes("3/4") ? -1 : 0
+        if (cells.length === 0) continue
+        const hasSharedRank = cells.length === 6
 
-        const countryName = cells.eq(baseIndex + 1).text().trim()
+        let countryName: string
+        let areaText: string
+
+        if (hasSharedRank) {
+            const nameCell = cells.eq(0)
+            countryName = nameCell.find('a').first().text().trim()
+            if (!countryName) {
+                const cellClone = nameCell.clone()
+                cellClone.find('img').remove()
+                countryName = cellClone.text().trim()
+                    .replace(/\[.*?\]/g, '')
+                    .trim()
+            }
+            areaText = cells.eq(1).text()
+        } else {
+            const nameCell = cells.eq(1)
+            countryName = nameCell.find('a').first().text().trim()
+            if (!countryName) {
+                const cellClone = nameCell.clone()
+                cellClone.find('img').remove()
+                countryName = cellClone.text().trim()
+                    .replace(/\[.*?\]/g, '')
+                    .trim()
+            }
+            areaText = cells.eq(2).text()
+        }
+
+        areaText = areaText
+            .split('(')[0]
+            .replace(/,/g, "")
+            .trim()
+        const areaValue = parseInt(areaText)
 
         const country = {
             name: countryName === "Earth" ? "World" : countryName,
-            area: parseInt(cells.eq(baseIndex + 2).text().replace(/,/g, "").replace(/\s\(.*\)/, "").trim()),
+            area: Number.isFinite(areaValue) ? areaValue : 0,
         }
 
-        if (country.name && country.area) {
-            countries.push({ ...country })
+        if (country.name && country.area > 0) {
+            countries.push(country)
         }
     }
 
