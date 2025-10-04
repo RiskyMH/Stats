@@ -56,6 +56,10 @@ export function addVideos(videos: youtube_v3.Schema$Video[]) {
                 where: inArray(schema.YouTubeChannel.channelId, channelIds)
             });
             const toFetchChannels = channels.map(c => c.channelId).filter(id => !channelIds.includes(id));
+            if (!toFetchChannels.length) {
+                console.log(`Issue with saving these videos: ${videos.map(v => v.id).join(', ')}`)
+                return;
+            }
 
             await addChannels(await getChannels(toFetchChannels) || []);
             return insert();
